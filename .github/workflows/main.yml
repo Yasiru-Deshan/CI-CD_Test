@@ -1,0 +1,42 @@
+name: Deploy to Google Cloud Functions
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Authenticate with Google Cloud
+        run: |
+          echo "$GCLOUD_SERVICE_KEY" > gcloud-key.json
+          gcloud auth activate-service-account --key-file=gcloud-key.json
+        env:
+          GCLOUD_SERVICE_KEY: ${{ secrets.GCLOUD_SERVICE_KEY }}
+
+      - name: Set Google Cloud Project
+        run: gcloud config set project $GCLOUD_PROJECT_ID
+        env:
+          GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+
+      - name: Deploy to Google Cloud Functions
+        run: |
+          gcloud functions deploy $GCLOUD_FUNCTION_NAME --region=$GCLOUD_REGION --runtime=nodejs14 --trigger-http
+        env:
+          GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+          GCLOUD_REGION: ${{ secrets.GCLOUD_REGION }}
+          GCLOUD_FUNCTION_NAME: ${{ secrets.GCLOUD_FUNCTION_NAME }}
